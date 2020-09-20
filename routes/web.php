@@ -28,10 +28,4 @@ Route::group(['middleware' => 'checkAuth'], function () {
     Route::get('/droplets', [DashboardController::class, 'droplets']);
 });
 
-Route::get('password/reset', 'Auth\ForgotPasswordController@showLinkRequestForm')->name('password.request');
-Route::post('password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail')->name('password.email');
-Route::post('passwords', 'Auth\ResetPasswordController@reset')->name('password.update');
-
-// Auth::routes(['verify' => true]);
-
 Route::any('/', [UserController::class, 'default']);
