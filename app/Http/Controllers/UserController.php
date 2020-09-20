@@ -7,6 +7,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Mail\Message;
+use Illuminate\Auth\Events\Verified;
 
 class UserController extends Controller
 {
@@ -18,7 +21,72 @@ class UserController extends Controller
     public function default(){
         return $this->sendResponse(0, "route not found");
     }
+    public function returnToFrontEnd()
+    {
+        die("will send to frontend");
+    }
+    public function resetPassword(Request $request){
+        $password = $request->get('password');
+        $token = $request->get('token');
+        $password_confirmation = $request->get('password_confirmation');
+        $email = $request->get('email');
+        // $credentials = ['password'=>$password, 'password_confirmation'=>$password_confirmation, 'token'=>$token];
+        if(!empty($password) && !empty($password_confirmation) && !empty($token) ){
+            if($password == $password_confirmation){
+                $users = User::where("email", $email)->get();
+                if(count($users) > 0){
+                    $user = $users[0];
+                    if(Password::tokenExists($user, $token)){
+                        $user->password = Hash::make($password);
+                        $user->save();
+                        Password::deleteToken($user);
+                        return $this->sendResponse(1, "Password Reset successfully");
+                    }
+                    return $this->sendResponse(0, "Invalid Token");
+                }else{
+                    return $this->sendResponse(0, "Email not found");
+                }
+                return $this->sendResponse(1, "Password Reset Success", $user);
+            }
+            return $this->sendResponse(0,"Password Dont Match");
+        }
+        return $this->sendResponse(0,"All Data required");
+    }
+    public function verify(Request $request, $id){
+    
+        $success_route = "/";
+        
+        $user = User::find($id);
 
+        if(!$user){
+            return redirect("/");
+        }
+        if ($user->hasVerifiedEmail()) {
+            return redirect($success_route);
+        }
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($request->user()));
+        }
+        return redirect($success_route);
+
+    }
+    public function reset(Request $request)
+    {
+        $email =  $request->get('email');
+        if(!empty($email)){
+            $users = User::where("email", $email)->get();
+            if(count($users) > 0){
+                $user = $users[0];
+                $token = Password::getRepository()->create($user);
+                $user->sendPasswordResetNotification($token);
+                return $this->sendResponse(1, "Password Reset Mail sent successfully");
+            }else{
+                return $this->sendResponse(0, "Email not found");
+            }
+        }else{
+            return $this->sendResponse(0, "All Fields are required");
+        }
+    }
     public function resend(Request $request)
     {
         $email =  $request->get('email');

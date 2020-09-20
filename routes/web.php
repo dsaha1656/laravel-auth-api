@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\DashboardController;
 
 /*
@@ -20,21 +19,18 @@ Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/resend', [UserController::class, 'resend']);
 Route::post('/logout', [UserController::class, 'logout']);
+Route::get('email/verify/{id}', [UserController::class, 'verify'])->name('verification.verify');
+Route::post('/reset', [UserController::class, 'reset']);
+Route::post('/reset/password', [UserController::class, 'resetPassword']);
+Route::get('password/reset/{token}', [UserController::class, 'returnToFrontEnd'])->name('password.reset');
 
 Route::group(['middleware' => 'checkAuth'], function () {
     Route::get('/droplets', [DashboardController::class, 'droplets']);
-    
 });
-
-
-Route::get('email/verify', [VerificationController::class, 'show'])->name('verification.notice');
-Route::get('email/verify/{id}', [VerificationController::class, 'verify'])->name('verification.verify');
-Route::get('email/resend', [VerificationController::class, 'resend'])->name('verification.resend');
 
 Route::get('password/reset', 'Auth\ForgotPasswordController@showLinkRequestForm')->name('password.request');
 Route::post('password/email', 'Auth\ForgotPasswordController@sendResetLinkEmail')->name('password.email');
-Route::get('password/reset/{token}', 'Auth\ResetPasswordController@showResetForm')->name('password.reset');
-Route::post('password/reset', 'Auth\ResetPasswordController@reset')->name('password.update');
+Route::post('passwords', 'Auth\ResetPasswordController@reset')->name('password.update');
 
 // Auth::routes(['verify' => true]);
 
