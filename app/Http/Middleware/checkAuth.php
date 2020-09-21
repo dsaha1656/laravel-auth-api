@@ -31,7 +31,7 @@ class checkAuth
                     return $next($request);
                 }
             }
-        }g
+        }
         return CommonFunctions::sendResponse(0, "Authenticatio Faild");
     }
 }
