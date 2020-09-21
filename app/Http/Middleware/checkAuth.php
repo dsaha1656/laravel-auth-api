@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Http\Controllers\helpers\CommonFunctions;
 
 class checkAuth
 {
@@ -30,9 +31,7 @@ class checkAuth
                     return $next($request);
                 }
             }
-        }
-        $data = json_encode(array('status'=>0, 'message'=>"Authenticatio Faild"));
-        return response($data)->header('Content-Type', 'application/json');
-    
+        }g
+        return CommonFunctions::sendResponse(0, "Authenticatio Faild");
     }
 }

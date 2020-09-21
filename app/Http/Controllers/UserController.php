@@ -10,16 +10,12 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Mail\Message;
 use Illuminate\Auth\Events\Verified;
+use App\Http\Controllers\helpers\CommonFunctions;
 
 class UserController extends Controller
 {
-    private function sendResponse($status=0, $message="", $data=null){
-        $data = json_encode(array('status'=>$status, 'message'=>$message, 'data'=>$data));
-        return response($data)->header('Content-Type', 'application/json');
-    }
-
     public function default(){
-        return $this->sendResponse(0, "route not found");
+        return CommonFunctions::sendResponse(0, "route not found");
     }
     public function returnToFrontEnd()
     {
@@ -40,17 +36,17 @@ class UserController extends Controller
                         $user->password = Hash::make($password);
                         $user->save();
                         Password::deleteToken($user);
-                        return $this->sendResponse(1, "Password Reset successfully");
+                        return CommonFunctions::sendResponse(1, "Password Reset successfully");
                     }
-                    return $this->sendResponse(0, "Invalid Token");
+                    return CommonFunctions::sendResponse(0, "Invalid Token");
                 }else{
-                    return $this->sendResponse(0, "Email not found");
+                    return CommonFunctions::sendResponse(0, "Email not found");
                 }
-                return $this->sendResponse(1, "Password Reset Success", $user);
+                return CommonFunctions::sendResponse(1, "Password Reset Success", $user);
             }
-            return $this->sendResponse(0,"Password Dont Match");
+            return CommonFunctions::sendResponse(0,"Password Dont Match");
         }
-        return $this->sendResponse(0,"All Data required");
+        return CommonFunctions::sendResponse(0,"All Data required");
     }
     public function verify(Request $request, $id){
     
@@ -79,12 +75,12 @@ class UserController extends Controller
                 $user = $users[0];
                 $token = Password::getRepository()->create($user);
                 $user->sendPasswordResetNotification($token);
-                return $this->sendResponse(1, "Password Reset Mail sent successfully");
+                return CommonFunctions::sendResponse(1, "Password Reset Mail sent successfully");
             }else{
-                return $this->sendResponse(0, "Email not found");
+                return CommonFunctions::sendResponse(0, "Email not found");
             }
         }else{
-            return $this->sendResponse(0, "All Fields are required");
+            return CommonFunctions::sendResponse(0, "All Fields are required");
         }
     }
     public function resend(Request $request)
@@ -95,12 +91,12 @@ class UserController extends Controller
             if(count($users) > 0){
                 $user = $users[0];
                 $user->sendEmailVerificationNotification();
-                return $this->sendResponse(1, "Verification mail Resend successfully");
+                return CommonFunctions::sendResponse(1, "Verification mail Resend successfully");
             }else{
-                return $this->sendResponse(0, "Email not found");
+                return CommonFunctions::sendResponse(0, "Email not found");
             }
         }else{
-            return $this->sendResponse(0, "All Fields are required");
+            return CommonFunctions::sendResponse(0, "All Fields are required");
         }
     }
     public function register(Request $request){
@@ -119,15 +115,15 @@ class UserController extends Controller
                     $user->password = Hash::make($password);
                     $user->save();
                     $user->sendEmailVerificationNotification();
-                    return $this->sendResponse(1, "User Registed Successfully");
+                    return CommonFunctions::sendResponse(1, "User Registed Successfully");
                 }else{
-                    return $this->sendResponse(0, "Email Already Registered");
+                    return CommonFunctions::sendResponse(0, "Email Already Registered");
                 }
             }else{
-                return $this->sendResponse(0, "Passwords dont match");
+                return CommonFunctions::sendResponse(0, "Passwords dont match");
             }
         }else{
-            return $this->sendResponse(0, "All Fields are required");
+            return CommonFunctions::sendResponse(0, "All Fields are required");
         }
     }
     public function login(Request $request){
@@ -145,15 +141,15 @@ class UserController extends Controller
                     array_push($tokens, $token);
                     $user->access_tokens = $tokens;
                     $user->save();
-                    return $this->sendResponse(1, "Login Success", $user);
+                    return CommonFunctions::sendResponse(1, "Login Success", $user);
                 }else{
-                    return $this->sendResponse(0, "Login Faild");
+                    return CommonFunctions::sendResponse(0, "Login Faild");
                 }
             }else{
-                return $this->sendResponse(0, "Email not found");
+                return CommonFunctions::sendResponse(0, "Email not found");
             }
         }else{
-            return $this->sendResponse(0, "All Fields are required");
+            return CommonFunctions::sendResponse(0, "All Fields are required");
         }
     }
     public function logout(Request $request){
@@ -165,14 +161,23 @@ class UserController extends Controller
             
             if($user && (count($token) > 1) ){
                 $tokens = json_decode($user->access_tokens);
+                if(!is_array($tokens)){
+                    $user->access_tokens = [];
+                    $user->save();
+                    Auth::logout();
+                    return CommonFunctions::sendResponse(0, "Logged out", $user->access_tokens);
+                }
                 if (($key = array_search($auth_header, $tokens)) !== false) {
                     unset($tokens[$key]);
+                    if(!is_array($tokens)){
+                        $tokens = [];
+                    }
                 }
                 $user->access_tokens = $tokens;
                 $user->save();
             }
         }
         Auth::logout();
-        return $this->sendResponse(0, "Logged out");
+        return CommonFunctions::sendResponse(0, "Logged out");
     }
 }
